@@ -1,0 +1,14 @@
+Package: treetop
+Title: Tree topologies
+Version: 0.1
+Authors@R: c(person("Colijn", "Caroline", email = "c.colijn@imperial.ac.uk",
+                  role = c("aut", "cre")),person("Plazzotta", "Giacomo", email = "giacomo.plazzotta11@imperial.ac.uk", role = "aut"))
+Description: Label and compare the topologies of rooted binary trees
+Depends: R (>= 3.1.0)
+Imports:
+    ape,
+    phylobase,
+    gmp,
+    MASS,
+    numbers,
+    digest

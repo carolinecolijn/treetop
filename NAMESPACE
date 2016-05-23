@@ -1,0 +1,3 @@
+export(treelabels, plotlabels,labeldistance,distunlab, veclabeldistance,veclabel,multiDistUnlab,vecMultiDistUnlab,prunetosize,weightMultiDistUnlab,nthPhylo)
+
+import(ape,phylobase,gmp,MASS,numbers,digest,igraph)

@@ -239,7 +239,7 @@ nthPhyloMat=function(n) {
 
 
 #Takes an edge matrix of a tree. It returns the number of generations and theindividuals in each generation
-generations=function(phyloMat) {
+generations <- function(phyloMat) {
 
 	L=length(phyloMat[,1])
 	mothers=phyloMat[,1][duplicated(phyloMat[,1])]
@@ -273,9 +273,57 @@ nthPhylo4=function(n) {
 }
 
 #Takes a tree index. It returns the corresponding tree in phylo format
-#It just coerce the phylo4 format from nthPhylo4(). Good for plotting
-#No worry about the WARNING MESSAGE
-nthPhylo=function(n) {
-	nthPhylo=as(nthPhylo4(n), "phylo")
-	return(nthPhylo)
+
+nthPhylo <- function(n) {
+edges=nthPhyloMat(n)
+root=edges[edges[,1]==0,2]
+edgesNoRoot=edges[-root,]
+nthPhylo=makelabphylotree(edgesNoRoot,rep(1,nrow(edgesNoRoot)),Root=root)
+return(nthPhylo)
+}
+
+
+# this uses igraph (functions graph, graph.dfs) and ape (rtree)
+makelabphylotree <- function(Edges, Lengths, Root,FLAGS=NULL) {
+G <- graph(edges=t(Edges));
+orderT <- graph.dfs(G,Root)$order; 
+ newLengths=0*Lengths; 
+
+oE<-order(Edges[,2]); Edges <- Edges[oE, ];  Lengths <-Lengths[oE];
+
+newEdges <- matrix(NA, nrow(Edges), ncol(Edges)) 
+ooT<-order(orderT[-1]);
+newEdges[ooT,] <- Edges
+newLengths[ooT]= Lengths
+if (!is.null(FLAGS)) {
+    FLAGS <- FLAGS[oE];
+    newFlags=0*FLAGS;
+    newFlags[ooT]=FLAGS
+}
+
+
+Nnode <- (length(orderT)-1)/2; 
+Ntips <- Nnode+1; 
+pt <- rtree(Ntips); 
+pt$Nnode <- Nnode; 
+pt$edge <-  newEdges;
+pt$edge.length=newLengths;
+
+tiplabels <- paste("t",1:Ntips,sep="") # tip numbers themselves
+
+if (!is.null(FLAGS)) {
+    tipind=which(newEdges[,2]<=Ntips)
+alllabels <- rep("b",nrow(newEdges))
+
+   alllabels[tipind] <- paste("t",1:Ntips,sep="") #  the one listed first in edges has the first tip label
+    # and so on. NEED TO NOW RE-ORDER THE FLAGS (keep track of tip meta-data; not needed in treetop)
+tiplabels <- alllabels[tipind]
+tipinternalnums <- newEdges[tipind,2]
+myflags=0*(1:Ntips)
+ myflags[newEdges[tipind,2]]=newFlags[tipind]
+    tiplabels[myflags==1]=paste("ps_",tiplabels[myflags==1],sep="")
+    
+}
+pt$tip.label=tiplabels
+return(pt)
 }

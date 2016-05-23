@@ -9,7 +9,7 @@
 # could consider weightings but might get to violating triangle ineq
 
 # new with hashing because labels get too big too fast 
-treelabels <- function(tree,tips.zero=TRUE) { 
+treelabels <- function(tree,tips.zero=TRUE,allChar=FALSE) { 
      if (class(tree) != "phylo") tree = as(tree,"phylo")
 	 if (is.null(tree$tip.label))
         stop("This tree has no tips")
@@ -17,23 +17,41 @@ treelabels <- function(tree,tips.zero=TRUE) {
 	labels=NA + 0*(1:(nrow(tree$edge)+1))
 	names(labels)[1:num.tips]=tree$tip.label;
 	names(labels)[(num.tips+1): length(labels)]=paste("node",1:(length(labels)-num.tips),sep="")
-	labels[1:num.tips]="0"     # tips are 0 for now 
+	labels[1:num.tips]=ifelse(allChar=TRUE,"1",1)     # tips are 0 for now 
 	NodeIDS= (num.tips + 1) : (2*num.tips -1)
 	while (any(is.na(labels))) { 
 		IsReady = NodeIDS[ vapply(NodeIDS,function(x) !any(is.na(labels[tree$edge[which(tree$edge[,1]==x),2]])) & is.na(labels[x])  ,FUN.VALUE=TRUE) ]
-		TheseLabels = unlist(sapply(IsReady, function(x) getLabelFromPairs(labels[tree$edge[tree$edge[,1]==x,2]])))
+		TheseLabels = unlist(sapply(IsReady, function(x) getLabelFromPairs(labels[tree$edge[tree$edge[,1]==x,2]],useAllCharacters=allChar)))
 		labels[IsReady]=TheseLabels
 		}
 		return(labels)
 	}
 
-getLabelFromPairs <-function( twolabels ) {
-	minMax=charMinMax(twolabels) 
+plotlabels <- function(tree) {
+    nn=length(tree$tip.label)
+tree$node.label=treelabels(tree)[(nn+1):(2*nn-1)]
+tree$tip.label=1+0*(1:nn)
+    plot(tree,show.node.label=TRUE, edge.width=8,cex=2,edge.color="grey")
+}
+
+getLabelFromPairs <-function( twolabels,useAllCharacters=FALSE ) {
+if (useAllCharacters==TRUE) {
+    minMax=charMinMax(twolabels) 
 	k = minMax$max
 	j = minMax$min
 	newLabel=charSum(c(charDiv2(charProd(c(k, charSum(c(k,"1"))))),charSum(c(j,"1")))) #this is k*(k+1)/2 + j + 1 (include the 1 if 0 is a tip)
-	return(newLabel)
+      return(newLabel)
+} else {
+    l1=twolabels[1]; l2=twolabels[2]; 
+        if (nchar(l1) < 14 & nchar(l2) < 14) { 
+                k = max(as.numeric(l1),as.numeric(l2))
+                j = min(as.numeric(l1),as.numeric(l2))
+                return( k*(k-1)/2 + j + 1) # NOTE if 1 is a tip and there are no 0s allowed (full binary tree) the correct expression is 1/2 k (k-1) + j + 1. 
+                } else { return(digest(sort(c(l1,l2)))) } 
 }
+
+}
+
 
 #this multiplies a char number for a single digit char
 charProdSimple <- function(twolabels) {
@@ -61,38 +79,6 @@ charProdSimple <- function(twolabels) {
 	return(charProdSimple)
 }
 
-#This divides by 2 an even char number
-charDiv2<- function(number) {
-	N=nchar(number)
-	digits=as.numeric(strsplit(number,split="")[[1]])
-	if (digits[N]%%2 !=0 ){stop("number not even")}
-	charDiv2=""
-	remainder=0
-	for (i in 1:N) {
-		toBeDivided=10*remainder+digits[i]
-		charDiv2=paste(charDiv2,as.character(floor(toBeDivided/2)),sep="")
-		remainder=toBeDivided%%2
-	}
-	nCharDiv2=nchar(charDiv2)
-	digitsCharDiv2=strsplit(charDiv2,"")[[1]]
-	if (nCharDiv2>1 & digitsCharDiv2[1]=="0") {charDiv2=paste(digitsCharDiv2[2:nCharDiv2],collapse="")}
-	return(charDiv2)
-}
-
-#This finds min and max between char numbers
-charMinMax<- function(twolabels) {
-	twolabels=twolabels[sort(nchar(twolabels),index.return=TRUE)$ix] #sort by length
-	l1=twolabels[1]; l2=twolabels[2];
-	N=nchar(l2)
-	templ1=paste(paste(rep("0",N-nchar(l1)), collapse=""),l1,sep="")
-	digits1=as.numeric(strsplit(templ1,split="")[[1]])
-	digits2=as.numeric(strsplit(l2,split="")[[1]])
-	diff=digits1-digits2
-	test=which(diff != 0)
-	if (length(test)==0) {return(list(max=l2,min=l1))}
-	else if (diff[test][1]>0) {return(list(max=l1,min=l2))}
-	else {return(list(max=l2,min=l1))}
-}
 
 ## 2: get distance between two label sets
 labeldistance <- function(x,y) {

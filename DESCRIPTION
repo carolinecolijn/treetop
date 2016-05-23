@@ -11,4 +11,5 @@ Imports:
     gmp,
     MASS,
     numbers,
-    digest
+    digest,
+    igraph

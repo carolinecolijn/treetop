@@ -1,17 +1,26 @@
 #load("//icnas4.cc.ic.ac.uk/gp111/downloads/usaAndTropFig3trees.Rdata")
 
 
-charSum <- function(labels) {
+charSum=function(labels) {
 	nLabels=length(labels)
+	
+	for (i in 1:nLabels) {
+		if (substring(labels[i],1,1)!="+"&substring(labels[i],1,1)!="-") {
+			labels[i]=paste("+",labels[i],sep="")
+		}
+	}
 	
 	labels=labels[sort(nchar(labels),index.return=TRUE)$ix] #sort by length
 
-	N=nchar(labels[nLabels])
+	N=nchar(labels[nLabels])-1
 	
 	digits=matrix(ncol=nLabels,nrow=N)
+	
 	for (i in 1:nLabels) {
-		digitsTemp=as.numeric(strsplit(labels[i],split="")[[1]])
-		digits[,i]=c(rep(0,N-length(digitsTemp)),digitsTemp)
+		charDigits=strsplit(labels[i],split="")[[1]]
+		sign=(charDigits[1]=="+")-(charDigits[1]=="-")
+		digitsTemp=as.numeric(charDigits[2:length(charDigits)])
+		digits[,i]=sign*c(rep(0,N-length(digitsTemp)),digitsTemp)
 	}
 
 	sumTemp=digits%*%rep(1,nLabels)
@@ -23,16 +32,18 @@ charSum <- function(labels) {
 	return(charSum)
 }
 
-digitise <- function(array) {
+digitise=function(array) {
+	sign=sign(array[1])
+	
 	l=length(array)
 	
-	tens=floor(array/10)
+	tens=sign(array)*floor(abs(array)/10)
 	units=array-tens*10
 	
 	digitisedTemp=c(tens,0)+c(0,units)
 	
-	while(any(digitisedTemp>=10)) {
-		tens=floor(digitisedTemp/10)
+	while(any(abs(digitisedTemp)>=10)) {
+		tens=(digitisedTemp>0)*floor(abs(digitisedTemp)/10)
 		units=digitisedTemp-tens*10
 		
 		if (tens[1]>=1) {
@@ -42,9 +53,16 @@ digitise <- function(array) {
 		}
 	}
 	
-	while (digitisedTemp[1]==0 & length(digitisedTemp)>1) {
-		digitisedTemp=digitisedTemp[2:length(digitisedTemp)]
+	digitisedTemp=discardFirstZeros(digitisedTemp)
+
+	while (sum(abs(digitisedTemp[sign(digitisedTemp)!=sign]))>0) {
+		toChange=which(sign(digitisedTemp)!=sign)
+		check=abs(sign(digitisedTemp[which(sign(digitisedTemp)!=sign)]))
+		digitisedTemp[toChange]=(10*sign+digitisedTemp[toChange])*check
+		digitisedTemp[toChange-1]=digitisedTemp[toChange-1]-1*check*sign
 	}
+	
+	digitisedTemp=discardFirstZeros(digitisedTemp)
 
 	digits=paste(as.character(digitisedTemp),collapse="")
 

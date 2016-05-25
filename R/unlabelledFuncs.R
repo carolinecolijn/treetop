@@ -39,7 +39,7 @@ if (useAllCharacters==TRUE) {
     minMax=charMinMax(twolabels) 
 	k = minMax$max
 	j = minMax$min
-	newLabel=charSum(c(charDiv2(charProd(c(k, charSum(c(k,"1"))))),charSum(c(j,"1")))) #this is k*(k+1)/2 + j + 1 (include the 1 if 0 is a tip)
+	newLabel=charSum(c(charDiv2(charProd(c(k, charSum(c(k,"-1"))))),charSum(c(j,"1")))) #this is k*(k+1)/2 + j + 1 (include the 1 if 0 is a tip)
       return(newLabel)
 } else {
     l1=twolabels[1]; l2=twolabels[2]; 

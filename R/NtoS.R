@@ -274,6 +274,16 @@ nthPhylo4=function(n) {
 
 #Takes a tree index. It returns the corresponding tree in phylo format
 
+#' Obtain the tree for integer n
+#' @param n An integer
+#' @return phylo object tree corresponding to n
+#' @examples
+#' nthPhylo(10)
+#' @import phylobase 
+#' @import gmp 
+#' @import MASS
+#' @import numbers
+#' @import igraph 
 nthPhylo <- function(n) {
 edges=nthPhyloMat(n)
 root=edges[edges[,1]==0,2]

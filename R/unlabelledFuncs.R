@@ -13,13 +13,14 @@
 
 #' Create the labels for a tree
 #'
+#' @import ape 
+#' @import digest
 #' @param tree A tree in phylo format (or convertible with as(tree,"phylo")
 #' @param allChar Whether to use all character precision (default is false)
 #' @return A vector of labels for the tree including tips and internal nodes
+#' @export
 #' @examples
 #' treelabels(rtree(10)
-
-
 treelabels <- function(tree,allChar=FALSE) { 
      if (class(tree) != "phylo") tree = as(tree,"phylo")
 	 if (is.null(tree$tip.label))
@@ -38,6 +39,12 @@ treelabels <- function(tree,allChar=FALSE) {
 		return(labels)
 	}
 
+#' Plot a tree showing the labels 
+#' @param tree A tree in phylo format
+#'  @return No variable is returned
+#'  @examples
+#'  plotlabels(rtree(10))
+#'  @export
 plotlabels <- function(tree) {
     nn=length(tree$tip.label)
 tree$node.label=treelabels(tree)[(nn+1):(2*nn-1)]
@@ -45,6 +52,13 @@ tree$tip.label=1+0*(1:nn)
     plot(tree,show.node.label=TRUE, edge.width=8,cex=2,edge.color="grey")
 }
 
+#' get label from the labels of the descendant nodes
+#' @param twolabels: vector of two labels
+#' @param useAllCharacters logical: use all character precision? default F
+#' @return a label, possibly hashed
+#' @examples
+#' getLabelFromPairs(c(2,3))
+#' @import digest
 getLabelFromPairs <-function( twolabels,useAllCharacters=FALSE ) {
 if (useAllCharacters==TRUE) {
     minMax=charMinMax(twolabels) 
@@ -91,7 +105,13 @@ charProdSimple <- function(twolabels) {
 }
 
 
-## 2: get distance between two label sets
+#' Get distance between two vectors of labels
+#' @param x A vector of tree labels (as created by treelabels)
+#' @param y A vector of tree labels (as created by treelabels)
+#' @return D1 distance: the symmetric set difference between x and 
+#' @export
+#' @examples
+#' labeldistance(treelabels(rtree(10)), treelabels(rtree(12))
 labeldistance <- function(x,y) {
 	# for each unique element of x, how many times does it come up in x, and how many in y?
 	uni.x=unique(x)
@@ -103,7 +123,13 @@ labeldistance <- function(x,y) {
 	 
 }
 
-## 3 get distance bewteen two trees, combining functions 1 and 2. 
+#' Get distance between two trees
+#' @param tree1 A phylogenetic tree, phylo format or convertible 
+#' @param tree2 A phylogenetic tree, phylo format or convertible 
+#' @return labeldistance between the label sets of the two trees
+#' @export
+#' @examples
+#' distunlab(rtree(10), rtree(12))
 distunlab<-function(tree1,tree2) {
 	lab1=treelabels(tree1); lab2=treelabels(tree2);
 	return(labeldistance(lab1,lab2))
@@ -112,6 +138,19 @@ distunlab<-function(tree1,tree2) {
 ##4 veclabeldistance: instead of the symmetric set difference use the L2 norm of vectors of the #s of each individual unique label. 
 
 # samesize = FALSE: divide all entries of hte label count by n, and add a compensatory espsilon | na -nb| term to the distance. if nottips =TRUE discount tip # entirely. 
+
+#' Get D2 distance between two vectors of labels
+#' @param lab1 A vector of tree labels (as created by treelabels)
+#' @param lab2 A vector of tree labels (as created by treelabels)
+#' @param samesize Logical: are the trees the same size? 
+#' @param eps: if the trees are not the same size (samesize=F), 
+#' the components in the distance will be divided by the number of tips. 
+#' Then eps*(difference in tip number) is added to preserve the metric property. 
+#' @param nottips: exclude the number of 1s from the distance (default F)
+#' @return D2 distance: the L2 norm comparing the vectors of labels
+#' @examples
+#' veclabeldistance(treelabels(rtree(10)), treelabels(rtree(12))
+#' @export
 veclabeldistance <- function(lab1, lab2, samesize=TRUE,eps=0,nottips=FALSE) {
 	Unis=unique(c(lab1,lab2)); 
 	if (nottips) {Unis = Unis[-which(Unis==min(Unis))]}
@@ -131,9 +170,19 @@ veclabel<- function(lab,Nmax=50) {
 } # NOTE this does not include the number of tips. 
 
 ## 4 all pairwise distances between a list of trees 
+
+#' All pairwise D1 distances for a list of trees
+#' @param trees A list of trees
+#' @param listoflabels Alternatively, a list of labels. 
+#' If listoflabels is NA (the default), this function
+#'  first computes the labels for the set of trees. 
+#' If listoflabels is not NA, the labels are compared directly and the trees are ignored.
+#' @return An object of class 'dist' containing tree-tree D1 distances
+#' @examples
+#' dd=multiDistUnlab(rmtree(10,12))
+#' @export
 multiDistUnlab <- function( trees,listoflabels=NA) {
 	 if (is.na(listoflabels)) {	num_trees <- length(trees)} else {num_trees <- length(listoflabels) }
-
 
     if (num_trees < 2) {
         stop("multiDistUnlab expects at least two trees")
@@ -161,6 +210,20 @@ if (is.na(listoflabels)) {   listoflabels <- lapply(trees, treelabels) }
 	}
 	
 	
+#' All pairwise D2 distances for a list of trees
+#' @param trees A list of trees
+#' @param listoflabels Alternatively, a list of labels. If listoflabels is NA
+#'  (the default), this function first computes the labels for the set of trees.
+#'  If listoflabels is not NA, the labels are compared directly and the trees are ignored.
+#' @param samesize Logical: whether the trees are the same size
+#' @param eps: if the trees are not the same size (samesize=F), the components 
+#' in the distance will be divided by the number of tips.
+#' Then eps*(difference in tip number) is added to preserve the metric property. 
+#' @param nottips: exclude the number of 1s from the distance (default F)
+#' @return An object of class 'dist' containing tree-tree D2 distances (uses veclabeldistance) 
+#' @examples
+#' dd=vecmultiDistUnlab(rmtree(10,12))
+#' @export
 vecMultiDistUnlab <- function(trees,listoflabels=NA,samesize=TRUE,eps=0,nottips=FALSE) {
 if (is.na(listoflabels)) {	num_trees <- length(trees)} else {num_trees <- length(listoflabels) }
 if (is.na(listoflabels)) {  print("creating labels"); listoflabels <- lapply(trees, treelabels) }
@@ -179,7 +242,13 @@ if (is.na(listoflabels)) {  print("creating labels"); listoflabels <- lapply(tre
 	
 getns <- function(trees) { vapply(trees, function(tree) length(tree$tip.label), FUN.VALUE=1)} 
 
-
+#' Prune a tree to the desired size, randomly uniformly dropping tips
+#' @param tree A tree in phylo format
+#' @param size an integer, the size of the final tree
+#' @return a tree in phylo format, with the desired number of tips (size)
+#' @examples
+#' prunetosize(rtree(20),12)
+#' @export
 prunetosize <- function(tree,size) {
 	nt=length(tree$tip.label)
 	if (nt <= size) {return(tree)} else {
@@ -191,6 +260,18 @@ prunetosize <- function(tree,size) {
 	################### WEIGHT THE LOWER LABELS HIGHER THAN THE HIGH ONES: 
 	
 # use 1/sqrt(label) or tiny number to *weight* contributions to v in vec distance: 	
+
+#' Get weighted D2 distance between two vectors of labels
+#' @param lab1 A vector of tree labels (as created by treelabels)
+#' @param lab2 A vector of tree labels (as created by treelabels)
+#' @param weights A function in the form ifelse(is.numeric(x),VALUE1,VALUE2) 
+#' where VALUE1 is the weight applied to labels that have not been hashed 
+#' (integers; fewer than 12 digits) and VALUE2 is the value if hashed. 
+#' Default is (1/(1+log(x)) and 0.0001
+#' @return weighted D2 distance
+#' @examples
+#' weightlabeldistance(treelabels(rtree(10)), treelabels(rtree(12))
+#' @export
 	weightlabeldistance <- function(lab1, lab2, weights=function(x) ifelse(is.numeric(x),1/(1+log(x)),0.0001)) {
 	Unis=unique(c(lab1,lab2)); 
 		
@@ -200,7 +281,18 @@ prunetosize <- function(tree,size) {
 	}
 
 	
-	
+#' All weighted pairwise distances for a list of trees
+#' @param trees A list of trees
+#' @param listoflabels Alternatively, a list of labels. If listoflabels is NA 
+#' (the default), this function first computes the labels for the set of trees.
+#' If listoflabels is not NA, the labels are compared directly and the trees are ignored.
+#' @param weights A function in the form ifelse(is.numeric(x),VALUE1,VALUE2) 
+#' where VALUE1 is the weight applied to labels that have not been hashed (fewer
+#' than 12 digits) and VALUE2 is the value if hashed. Default is (1/(1+log(x)) and 1e-8
+#' @return An object of class 'dist' containing tree-tree distances
+#' @examples
+#' dd=weightmultiDistUnlab(rmtree(10,12))
+#' @export
 weightMultiDistUnlab <- function(trees,listoflabels=NA,weights=function(x) ifelse(is.numeric(x),1/(1+log(x)),1e-8)) {
 if (is.na(listoflabels)) {	num_trees <- length(trees)} else {num_trees <- length(listoflabels) }
 if (is.na(listoflabels)) {   listoflabels <- lapply(trees, treelabels) }

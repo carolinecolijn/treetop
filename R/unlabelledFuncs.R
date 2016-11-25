@@ -29,7 +29,7 @@ treelabels <- function(tree,allChar=FALSE) {
 	labels=NA + 0*(1:(nrow(tree$edge)+1))
 	names(labels)[1:num.tips]=tree$tip.label;
 	names(labels)[(num.tips+1): length(labels)]=paste("node",1:(length(labels)-num.tips),sep="")
-	labels[1:num.tips]=ifelse(allChar=TRUE,"1",1)     # tips are 0 for now 
+	labels[1:num.tips]=ifelse(allChar==TRUE,"1",1)     # tips are 0 for now 
 	NodeIDS= (num.tips + 1) : (2*num.tips -1)
 	while (any(is.na(labels))) { 
 		IsReady = NodeIDS[ vapply(NodeIDS,function(x) !any(is.na(labels[tree$edge[which(tree$edge[,1]==x),2]])) & is.na(labels[x])  ,FUN.VALUE=TRUE) ]

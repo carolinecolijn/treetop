@@ -284,6 +284,7 @@ nthPhylo4=function(n) {
 #' @import MASS
 #' @import numbers
 #' @import igraph 
+#' @export
 nthPhylo <- function(n) {
 edges=nthPhyloMat(n)
 root=edges[edges[,1]==0,2]

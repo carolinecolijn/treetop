@@ -3,6 +3,7 @@
 export(distunlab)
 export(labeldistance)
 export(multiDistUnlab)
+export(nthPhylo)
 export(prunetosize)
 export(treelabels)
 export(vecMultiDistUnlab)
